@@ -67,6 +67,9 @@ int main(int argc, char *argv[]) {
   AVFrame         *pFrameOut = NULL; 
   AVPacket        packetOut;
   int             frameFinishedOut;
+
+  AVDictionary    *optionsDictOut = NULL;
+  struct SwsContext *sws_ctxOut = NULL;
   
   if(argc < 3) {
     printf("Please provide a movie file\n");

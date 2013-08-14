@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
   int             frameFinishedOut;
   //float           aspect_ratio;
 
-  AVDictionary    *optionsDict = NULL;
-  struct SwsContext *sws_ctx = NULL;
+  AVDictionary    *optionsDictOut = NULL;
+  struct SwsContext *sws_ctxOut = NULL;
 
   SDL_Overlay     *bmp = NULL;
   SDL_Surface     *screen = NULL;
