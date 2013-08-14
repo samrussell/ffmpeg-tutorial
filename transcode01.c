@@ -156,6 +156,40 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   
+  pCodecCtxOut = avcodec_alloc_context3(codec);
+  if (!pCodecCtxOut) {
+    fprintf(stderr, "Could not allocate video codec context\n");
+    exit(1);
+  }
+  
+  // put sample parameters
+  /*
+  c->bit_rate = 400000;
+  // resolution must be a multiple of two
+  c->width = 352;
+  c->height = 288;
+  // frames per second
+  c->time_base= (AVRational){1,25};
+  c->gop_size = 10; // emit one intra frame every ten frames
+  c->max_b_frames=1;
+  c->pix_fmt = AV_PIX_FMT_YUV420P;
+  */
+  
+  // steal parameters from the other context
+  pCodecCtxOut->bit_rate = pCodecCtx->bit_rate;
+  
+  pCodecCtxOut->width = pCodecCtx->width;
+  pCodecCtxOut->height = pCodecCtx->height;
+  pCodecCtxOut->time_base = pCodecCtx->time_base;
+  pCodecCtxOut->gop_size = pCodecCtx->gop_size;
+  pCodecCtxOut->max_b_frames = pCodecCtx->max_b_frames;
+  pCodecCtxOut->pix_fmt = pCodecCtx->pix_fmt;
+  
+  if (avcodec_open2(pCodecCtxOut, pCodecOut, NULL) < 0) {
+    fprintf(stderr, "Could not open codec\n");
+    exit(1);
+  }
+  
   // Read frames and save first five frames to disk
   i=0;
   while(av_read_frame(pFormatCtx, &packet)>=0) {
