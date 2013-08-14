@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   
-  pCodecCtxOut = avcodec_alloc_context3(codec);
+  pCodecCtxOut = avcodec_alloc_context3(pCodecOut);
   if (!pCodecCtxOut) {
     fprintf(stderr, "Could not allocate video codec context\n");
     exit(1);
