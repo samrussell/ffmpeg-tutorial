@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   
   // Do the same thing for output
   // find the encoder AV_CODEC_ID_H264
-  pCodecOut = avcodec_find_encoder(AV_CODEC_ID_H264);
+  pCodecOut = avcodec_find_encoder(CODEC_ID_H264);
   
   if (!pCodecOut) {
     fprintf(stderr, "Codec not found\n");
