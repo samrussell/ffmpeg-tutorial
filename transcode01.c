@@ -69,6 +69,9 @@ int main(int argc, char *argv[]) {
   int             frameFinishedOut;
   FILE*           f=NULL;
   int             ret;
+  int             got_output;
+  
+  uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 
   AVDictionary    *optionsDictOut = NULL;
   struct SwsContext *sws_ctxOut = NULL;
@@ -200,87 +203,72 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
  
-  pFrameOut = avcodec_alloc_frame();
-  if (!pFrameOut) {
-    fprintf(stderr, "Could not allocate video frame\n");
-    exit(1);
-  }
-  pFrameOut->format = pCodecCtxOut->pix_fmt;
-  pFrameOut->width  = pCodecCtxOut->width;
-  pFrameOut->height = pCodecCtxOut->height;
+  //pFrameOut = avcodec_alloc_frame();
+  //if (!pFrameOut) {
+  //  fprintf(stderr, "Could not allocate video frame\n");
+  //  exit(1);
+  //}
+  //pFrameOut->format = pCodecCtxOut->pix_fmt;
+  //pFrameOut->width  = pCodecCtxOut->width;
+  //pFrameOut->height = pCodecCtxOut->height;
   
   /* the image can be allocated by any means and av_image_alloc() is
    * just the most convenient way if av_malloc() is to be used */
-  ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height,
-                       c->pix_fmt, 32);
-  if (ret < 0) {
-    fprintf(stderr, "Could not allocate raw picture buffer\n");
-    exit(1);
-  }
+  //ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height,
+  //                     c->pix_fmt, 32);
+  //if (ret < 0) {
+  //  fprintf(stderr, "Could not allocate raw picture buffer\n");
+  //  exit(1);
+  //}
   /* encode 1 second of video */
-  for(i=0;i<25;i++) {
-    av_init_packet(&pkt);
-    pkt.data = NULL;    // packet data will be allocated by the encoder
-    pkt.size = 0;
+  //for(i=0;i<25;i++) {
+  /*
+    av_init_packet(&packetOut);
+    packetOut.data = NULL;    // packet data will be allocated by the encoder
+    packetOut.size = 0;
 
-    fflush(stdout);
-    /* prepare a dummy image */
-    /* Y */
-    for(y=0;y<c->height;y++) {
-      for(x=0;x<c->width;x++) {
-        frame->data[0][y * frame->linesize[0] + x] = x + y + i * 3;
-      }
-    }
- 
-    /* Cb and Cr */
-    for(y=0;y<c->height/2;y++) {
-      for(x=0;x<c->width/2;x++) {
-        frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
-        frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
-      }
-    }
- 
-    frame->pts = i;
- 
-    /* encode the image */
-    ret = avcodec_encode_video2(c, &pkt, frame, &got_output);
+    // encode the image
+    ret = avcodec_encode_video2(c, &packetOut, frame, &got_output);
     if (ret < 0) {
       fprintf(stderr, "Error encoding frame\n");
       exit(1);
     }
  
     if (got_output) {
-      printf("Write frame %3d (size=%5d)\n", i, pkt.size);
-      fwrite(pkt.data, 1, pkt.size, f);
-      av_free_packet(&pkt);
+      printf("Write frame %3d (size=%5d)\n", i, packetOut.size);
+      fwrite(packetOut.data, 1, packetOut.size, f);
+      av_free_packet(&packetOut);
     }
-  }
+  */
+  //}
  
   /* get the delayed frames */
+  /*
   for (got_output = 1; got_output; i++) {
     fflush(stdout);
 
-    ret = avcodec_encode_video2(c, &pkt, NULL, &got_output);
+    ret = avcodec_encode_video2(c, &packetOut, NULL, &got_output);
     if (ret < 0) {
       fprintf(stderr, "Error encoding frame\n");
       exit(1);
     }
  
     if (got_output) {
-      printf("Write frame %3d (size=%5d)\n", i, pkt.size);
-      fwrite(pkt.data, 1, pkt.size, f);
-      av_free_packet(&pkt);
+      printf("Write frame %3d (size=%5d)\n", i, packetOut.size);
+      fwrite(packetOut.data, 1, packetOut.size, f);
+      av_free_packet(&packetOut);
     }
   }
+  */
  
   /* add sequence end code to have a real mpeg file */
   fwrite(endcode, 1, sizeof(endcode), f);
   fclose(f);
 
-  avcodec_close(c);
-  av_free(c);
-  av_freep(&frame->data[0]);
-  avcodec_free_frame(&frame);
+  avcodec_close(pCodecCtxOut);
+  //av_free(pCodecCtxOut);
+  //av_freep(&frame->data[0]);
+  //avcodec_free_frame(&frame);
   printf("\n");
   
   // Do the transcode part
@@ -296,7 +284,7 @@ int main(int argc, char *argv[]) {
       
       // Did we get a video frame?
       if(frameFinished) {
-	// Convert the image from its native format to RGB
+	  // Convert the image from its native format to RGB
         sws_scale
         (
             sws_ctx,
@@ -307,17 +295,55 @@ int main(int argc, char *argv[]) {
             pFrameRGB->data,
             pFrameRGB->linesize
         );
-	
-	// Save the frame to disk
-	if(++i<=5)
-	  SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, 
-		    i);
+        
+    
+        // also encode
+        av_init_packet(&packetOut);
+        packetOut.data = NULL;    // packet data will be allocated by the encoder
+        packetOut.size = 0;
+    
+        // encode the image
+        ret = avcodec_encode_video2(c, &packetOut, pFrame, &got_output);
+        if (ret < 0) {
+          fprintf(stderr, "Error encoding frame\n");
+          exit(1);
+        }
+     
+        if (got_output) {
+          printf("Write frame %3d (size=%5d)\n", i, packetOut.size);
+          fwrite(packetOut.data, 1, packetOut.size, f);
+          av_free_packet(&packetOut);
+        }
+	    // Save the frame to disk
+	    if(++i<=5)
+	      SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
       }
     }
     
     // Free the packet that was allocated by av_read_frame
     av_free_packet(&packet);
   }
+  
+  // finish encode
+  for (got_output = 1; got_output; i++) {
+    fflush(stdout);
+
+    ret = avcodec_encode_video2(c, &packetOut, NULL, &got_output);
+    if (ret < 0) {
+      fprintf(stderr, "Error encoding frame\n");
+      exit(1);
+    }
+ 
+    if (got_output) {
+      printf("Write frame %3d (size=%5d)\n", i, packetOut.size);
+      fwrite(packetOut.data, 1, packetOut.size, f);
+      av_free_packet(&packetOut);
+    }
+  }
+  
+  /* add sequence end code to have a real mpeg file */
+  fwrite(endcode, 1, sizeof(endcode), f);
+  fclose(f);
   
   // Free the RGB image
   av_free(buffer);
