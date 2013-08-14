@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
   }
   */
  
-  /* add sequence end code to have a real mpeg file */
+  /*
   fwrite(endcode, 1, sizeof(endcode), f);
   fclose(f);
 
@@ -270,6 +270,7 @@ int main(int argc, char *argv[]) {
   //av_freep(&frame->data[0]);
   //avcodec_free_frame(&frame);
   printf("\n");
+  */
   
   // Do the transcode part
   
@@ -303,7 +304,7 @@ int main(int argc, char *argv[]) {
         packetOut.size = 0;
     
         // encode the image
-        ret = avcodec_encode_video2(c, &packetOut, pFrame, &got_output);
+        ret = avcodec_encode_video2(pCodecCtxOut, &packetOut, pFrame, &got_output);
         if (ret < 0) {
           fprintf(stderr, "Error encoding frame\n");
           exit(1);
@@ -328,7 +329,7 @@ int main(int argc, char *argv[]) {
   for (got_output = 1; got_output; i++) {
     fflush(stdout);
 
-    ret = avcodec_encode_video2(c, &packetOut, NULL, &got_output);
+    ret = avcodec_encode_video2(pCodecCtxOut, &packetOut, NULL, &got_output);
     if (ret < 0) {
       fprintf(stderr, "Error encoding frame\n");
       exit(1);
@@ -344,6 +345,7 @@ int main(int argc, char *argv[]) {
   /* add sequence end code to have a real mpeg file */
   fwrite(endcode, 1, sizeof(endcode), f);
   fclose(f);
+  avcodec_close(pCodecCtxOut);
   
   // Free the RGB image
   av_free(buffer);
