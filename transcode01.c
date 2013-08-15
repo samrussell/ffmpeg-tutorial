@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
 
   outfmtcontext->oformat = outfmt;
 
-  outvideostream = avformat_new_stream(outfmtcontext, pCodecOut);
+  outvideostream = avformat_new_stream(outfmtcontext, NULL);
   avcodec_copy_context( outvideostream->codec, pCodecCtxOut );
 
   av_dump_format(outfmtcontext, 0, argv[2], 1);
@@ -378,7 +378,7 @@ printf("Ready to start the process\n");
         //  exit(1);
         //}
 
-        printf("About to start encoding\n");
+        //printf("About to start encoding\n");
 
         /*if(outvideostream == NULL){//create stream in file
           outvideostream = avformat_new_stream(outfmtcontext,pCodec);
@@ -390,7 +390,7 @@ printf("Ready to start the process\n");
 
         // use avcodec_encode_video() (not 2)
         out_size = avcodec_encode_video(pCodecCtxOut, outbuf, outbuf_size, pFrame);
-        printf("Called avcodec_encode_video()\n");
+        //printf("Called avcodec_encode_video()\n");
         printf("encoding frame %3d (size=%5d)\n", i, out_size);
         packetOut.data=outbuf;
         packetOut.size = out_size;
@@ -404,6 +404,7 @@ printf("Ready to start the process\n");
         //  av_free_packet(&packetOut);
         //}
 	    // Save the frame to disk
+	    i++;
 	    //if(++i<=50)
 	    //  SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
       }
@@ -433,15 +434,22 @@ printf("Ready to start the process\n");
     packetOut.size = 0;
     out_size = avcodec_encode_video(pCodecCtxOut, outbuf, outbuf_size, NULL);
     printf("encoding frame %3d (size=%5d)\n", i, out_size);
-    av_write_frame(outfmtcontext, &packetOut);
+    packetOut.data=outbuf;
+    packetOut.size = out_size;
+    if(out_size){
+      av_write_frame(outfmtcontext, &packetOut);
+    }
     av_free_packet(&packetOut);
     //fwrite(outbuf, 1, out_size, f);
 
   }
 
   /* add sequence end code to have a real mpeg file */
-  fwrite(endcode, 1, sizeof(endcode), f);
-  fclose(f);
+  //fwrite(endcode, 1, sizeof(endcode), f);
+  //fclose(f);
+  av_write_trailer( outfmtcontext );
+  avio_close( outfmtcontext->pb );
+  avformat_free_context( outfmtcontext );
   free(outbuf);
   avcodec_close(pCodecCtxOut);
 
