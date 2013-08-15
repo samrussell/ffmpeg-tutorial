@@ -185,12 +185,12 @@ int main(int argc, char *argv[]) {
 
   // steal parameters from the other context
   //pCodecCtxOut->bit_rate = pCodecCtx->bit_rate;
-  pCodecCtxOut->bit_rate = 400000;
+  pCodecCtxOut->bit_rate = 4000000;
 
   pCodecCtxOut->width = pCodecCtx->width;
   pCodecCtxOut->height = pCodecCtx->height;
-  pCodecCtxOut->time_base = pCodecCtx->time_base;
-  //pCodecCtxOut->time_base = (AVRational){1,25};
+  //pCodecCtxOut->time_base = pCodecCtx->time_base;
+  pCodecCtxOut->time_base = (AVRational){1,10};
   pCodecCtxOut->gop_size = pCodecCtx->gop_size;
   pCodecCtxOut->max_b_frames = pCodecCtx->max_b_frames;
   pCodecCtxOut->pix_fmt = pCodecCtx->pix_fmt;
@@ -360,8 +360,8 @@ printf("Ready to start the process\n");
         //  av_free_packet(&packetOut);
         //}
 	    // Save the frame to disk
-	    if(++i<=50)
-	      SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
+	    //if(++i<=50)
+	    //  SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
       }
     }
 
@@ -384,7 +384,7 @@ printf("Ready to start the process\n");
     //  fwrite(packetOut.data, 1, packetOut.size, f);
     //  av_free_packet(&packetOut);
     //}
-    out_size = avcodec_encode_video(pCodecCtx, outbuf, outbuf_size, NULL);
+    out_size = avcodec_encode_video(pCodecCtxOut, outbuf, outbuf_size, NULL);
     printf("encoding frame %3d (size=%5d)\n", i, out_size);
     fwrite(outbuf, 1, out_size, f);
 
@@ -393,6 +393,7 @@ printf("Ready to start the process\n");
   /* add sequence end code to have a real mpeg file */
   fwrite(endcode, 1, sizeof(endcode), f);
   fclose(f);
+  free(outbuf);
   avcodec_close(pCodecCtxOut);
 
   // Free the RGB image
