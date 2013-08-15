@@ -73,6 +73,10 @@ int main(int argc, char *argv[]) {
   int             out_size;
   int             outbuf_size;
   uint8_t         *outbuf;
+  AVOutputFormat  *outfmt;
+  AVFormatContext *outfmtcontext;
+  AVStream        *outvideostream=NULL;
+  AVCodec         *outvideocodec;
 
   uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 
@@ -222,9 +226,37 @@ int main(int argc, char *argv[]) {
 
 
 
-  f = fopen(argv[2], "wb");
-  if (!f) {
-    fprintf(stderr, "Could not open %s\n", argv[2]);
+  //f = fopen(argv[2], "wb");
+  //if (!f) {
+  //  fprintf(stderr, "Could not open %s\n", argv[2]);
+  //  exit(1);
+  //}
+
+  // use libavformat for output instead
+  outfmtcontext = avformat_alloc_context();
+  if (!outfmtcontext){
+    fprintf(stderr, "Couldn't create output format context\n");
+    exit(1);
+  }
+
+  outfmt = av_guess_format(NULL,argv[2],NULL);
+
+  outfmtcontext->oformat = outfmt;
+
+  outvideostream = avformat_new_stream(outfmtcontext, pCodecOut);
+  avcodec_copy_context( outvideostream->codec, pCodecCtxOut );
+
+  av_dump_format(outfmtcontext, 0, argv[2], 1);
+
+  if (!(outfmt->flags & AVFMT_NOFILE)) {
+    if (avio_open(&outfmtcontext->pb, argv[2], AVIO_FLAG_WRITE) < 0) {
+      fprintf(stderr, "Could not open '%s'\n", argv[2]);
+      exit(1);
+    }
+  }
+
+  if (avformat_write_header(outfmtcontext, NULL) < 0) {
+    fprintf(stderr, "Error occurred when opening output file\n");
     exit(1);
   }
 
@@ -334,7 +366,7 @@ printf("Ready to start the process\n");
 
 
         // also encode
-        //av_init_packet(&packetOut);
+        av_init_packet(&packetOut);
         packetOut.data = NULL;    // packet data will be allocated by the encoder
         packetOut.size = 0;
 
@@ -348,11 +380,23 @@ printf("Ready to start the process\n");
 
         printf("About to start encoding\n");
 
+        /*if(outvideostream == NULL){//create stream in file
+          outvideostream = avformat_new_stream(outfmtcontext,pCodec);
+          avcodec_copy_context(outvideostream->codec,pCodec);
+          outvideostream->sample_aspect_ratio = pCodec->sample_aspect_ratio;
+          avformat_write_header(oc,NULL);
+        }
+        packet.stream_index = outvideostream->id*/
+
         // use avcodec_encode_video() (not 2)
         out_size = avcodec_encode_video(pCodecCtxOut, outbuf, outbuf_size, pFrame);
         printf("Called avcodec_encode_video()\n");
         printf("encoding frame %3d (size=%5d)\n", i, out_size);
-        fwrite(outbuf, 1, out_size, f);
+        packetOut.data=outbuf;
+        packetOut.size = out_size;
+        //fwrite(outbuf, 1, out_size, f);
+        av_write_frame(outfmtcontext, &packetOut);
+        av_free_packet(&packetOut);
 
         //if (got_output) {
         //  printf("Write frame %3d (size=%5d)\n", i, packetOut.size);
@@ -384,9 +428,14 @@ printf("Ready to start the process\n");
     //  fwrite(packetOut.data, 1, packetOut.size, f);
     //  av_free_packet(&packetOut);
     //}
+    av_init_packet(&packetOut);
+    packetOut.data = NULL;    // packet data will be allocated by the encoder
+    packetOut.size = 0;
     out_size = avcodec_encode_video(pCodecCtxOut, outbuf, outbuf_size, NULL);
     printf("encoding frame %3d (size=%5d)\n", i, out_size);
-    fwrite(outbuf, 1, out_size, f);
+    av_write_frame(outfmtcontext, &packetOut);
+    av_free_packet(&packetOut);
+    //fwrite(outbuf, 1, out_size, f);
 
   }
 
