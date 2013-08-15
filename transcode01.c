@@ -157,14 +157,14 @@ int main(int argc, char *argv[]) {
   // Set up output encoder too
 
   // find the encoder AV_CODEC_ID_H264
-  pCodecOut = avcodec_find_encoder(CODEC_ID_H264);
+  pCodecOut = avcodec_find_encoder(CODEC_ID_H264); //CODEC_ID_H264);
 
   if (!pCodecOut) {
     fprintf(stderr, "Codec not found\n");
     exit(1);
   }
 
-  pCodecCtxOut = avcodec_alloc_context3(pCodecOut);
+  pCodecCtxOut = avcodec_alloc_context();
   if (!pCodecCtxOut) {
     fprintf(stderr, "Could not allocate video codec context\n");
     exit(1);
@@ -184,16 +184,38 @@ int main(int argc, char *argv[]) {
   */
 
   // steal parameters from the other context
-  pCodecCtxOut->bit_rate = pCodecCtx->bit_rate;
+  //pCodecCtxOut->bit_rate = pCodecCtx->bit_rate;
+  pCodecCtxOut->bit_rate = 400000;
 
   pCodecCtxOut->width = pCodecCtx->width;
   pCodecCtxOut->height = pCodecCtx->height;
   pCodecCtxOut->time_base = pCodecCtx->time_base;
+  //pCodecCtxOut->time_base = (AVRational){1,25};
   pCodecCtxOut->gop_size = pCodecCtx->gop_size;
   pCodecCtxOut->max_b_frames = pCodecCtx->max_b_frames;
   pCodecCtxOut->pix_fmt = pCodecCtx->pix_fmt;
 
-  if (avcodec_open2(pCodecCtxOut, pCodecOut, NULL) < 0) {
+  // stealing a profile to make x264 work
+  pCodecCtxOut->bit_rate_tolerance = 0;
+  pCodecCtxOut->rc_max_rate = 0;
+  pCodecCtxOut->rc_buffer_size = 0;
+  pCodecCtxOut->b_frame_strategy = 1;
+  pCodecCtxOut->coder_type = 1;
+  pCodecCtxOut->me_cmp = 1;
+  pCodecCtxOut->me_range = 16;
+  pCodecCtxOut->qmin = 10;
+  pCodecCtxOut->qmax = 51;
+  pCodecCtxOut->scenechange_threshold = 40;
+  pCodecCtxOut->flags |= CODEC_FLAG_LOOP_FILTER;
+  pCodecCtxOut->me_method = ME_HEX;
+  pCodecCtxOut->me_subpel_quality = 5;
+  pCodecCtxOut->i_quant_factor = 0.71;
+  pCodecCtxOut->qcompress = 0.6;
+  pCodecCtxOut->max_qdiff = 4;
+  pCodecCtxOut->directpred = 1;
+  pCodecCtxOut->flags2 |= CODEC_FLAG2_FASTPSKIP;
+
+  if (avcodec_open(pCodecCtxOut, pCodecOut) < 0) {
     fprintf(stderr, "Could not open codec\n");
     exit(1);
   }
@@ -327,7 +349,7 @@ printf("Ready to start the process\n");
         printf("About to start encoding\n");
 
         // use avcodec_encode_video() (not 2)
-        out_size = avcodec_encode_video(pCodecCtx, outbuf, outbuf_size, pFrame);
+        out_size = avcodec_encode_video(pCodecCtxOut, outbuf, outbuf_size, pFrame);
         printf("Called avcodec_encode_video()\n");
         printf("encoding frame %3d (size=%5d)\n", i, out_size);
         fwrite(outbuf, 1, out_size, f);
