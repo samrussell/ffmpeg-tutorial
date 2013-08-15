@@ -5,14 +5,14 @@ CC:=gcc
 INCLUDES:=$(shell pkg-config --cflags libavformat libavcodec libswscale libavutil sdl)
 CFLAGS:=-Wall -ggdb
 LDFLAGS:=$(shell pkg-config --libs libavformat libavcodec libswscale libavutil sdl) -lm
-EXE:=tutorial01.out tutorial02.out tutorial03.out tutorial04.out tutorial05.out tutorial06.out tutorial07.out transcode01.out transcode02.out
+EXE:=tutorial01.out tutorial02.out tutorial03.out tutorial04.out tutorial05.out tutorial06.out tutorial07.out transcode01.out transcode01-h263.out transcode02.out
 
 
 #
 # This is here to prevent Make from deleting secondary files.
 #
 .SECONDARY:
-	
+
 
 #
 # $< is the first dependency in the dependency list
